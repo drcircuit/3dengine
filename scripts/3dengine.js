@@ -349,7 +349,7 @@
         start = t;
         let halftheta = theta/2;
         let quartertheta = 0;
-        let worldmatrix = matrix();
+        let worldmatrix = dcl.matrix();
         worldmatrix = matrixmatrixmul(worldmatrix,rotationmatrixz(theta));
         worldmatrix = matrixmatrixmul(worldmatrix,rotationmatrixx(halftheta));
         // worldmatrix = matrixmatrixmul(worldmatrix,rotationmatrixy(quartertheta));
