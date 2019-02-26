@@ -8,12 +8,12 @@
     let framebuffer;
     let camera = dcl.vector(0,0,0);
 
-    function matrix(){
-        return {m:[
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,0,0],
-            [0,0,0,0],
+    function matrix(m){
+        return {m:m || [
+            [1,0,0,0],
+            [0,1,0,0],
+            [0,0,1,0],
+            [0,0,0,1],
         ],isMatrix:true};
     }
     function compare(a,b) {
@@ -23,19 +23,83 @@
           return 1;
         return 0;
       }
+    
     function matmul(v, m){
         let x = v.x * m.m[0][0]+v.y*m.m[1][0]+v.z*m.m[2][0]+m.m[3][0];
         let y = v.x * m.m[0][1]+v.y*m.m[1][1]+v.z*m.m[2][1]+m.m[3][1];
         let z = v.x * m.m[0][2]+v.y*m.m[1][2]+v.z*m.m[2][2]+m.m[3][2];
         let w = v.x * m.m[0][3]+v.y*m.m[1][3]+v.z*m.m[2][3]+m.m[3][3];
-        if(w !==0){
-            x /= w;
-            y /= w;
-            z /= w;
-        }
-        return dcl.vector(x,y,z);
+       
+        return dcl.vector(x,y,z,w);
     }
 
+    function matrixmatrixmul(a, b) {
+        let m = [];
+        for (let r = 0; r < a.m.length; r++) {
+            let row = [];
+            for (let c = 0; c < b.m[0].length; c++) {
+                let n = 0;
+                for (let br = 0; br < b.m.length; br++) {
+                    n += a.m[r][br] * b.m[br][c];
+                }
+                row.push(n);
+            }
+            m.push(row);
+        }
+        return matrix(m);
+    }
+
+    function translationmatrix(x,y,z){
+        let m = matrix();
+        m.m[3][0] = x;
+        m.m[3][1] = y;
+        m.m[3][2] = z;
+        return m;
+    }
+    function projectionmatrix(fov,aspect,znear,zfar){
+        let fovrad = 1/Math.tan((fov/2).toRadians());
+        let m = matrix();
+        m.m[0][0] = aspect*fovrad;
+        m.m[1][1] = fovrad;
+        m.m[2][2] = zfar / (zfar-znear);
+        m.m[3][2] = (-zfar *znear)/(zfar-znear);
+        m.m[2][3] = 1;
+        m.m[3][3] = 0;
+        return m;
+    }
+    function rotationmatrixx(deg){
+        let theta = deg.toRadians();
+        let m = matrix();
+        m.m[0][0] = 1;
+        m.m[1][1] = cos(theta);
+        m.m[1][2] = sin(theta);
+        m.m[2][1] = -sin(theta);
+        m.m[2][2] = cos(theta);
+        m.m[3][3] = 1;
+        return m;
+    }
+    function rotationmatrixy(deg){
+        let theta = deg.toRadians();
+        let m = matrix();
+        m.m[0][0] = cos(theta);
+        m.m[0][2] = sin(theta);
+        m.m[1][1] = 1
+        m.m[2][0] = -sin(theta);
+        m.m[2][3] = cos(theta);
+        m.m[3][3] = 1;
+        return m;
+    }
+    function rotationmatrixz(deg){
+        let theta = deg.toRadians();
+        let m = matrix();
+        m.m[0][1] = sin(theta);
+        m.m[0][0] = cos(theta);
+        m.m[1][0] = -sin(theta);
+        m.m[1][1] = cos(theta);
+        m.m[2][2] = 1;
+        m.m[3][3] = 1;
+        return m;
+    }
     function triangle(vertices){
         return {
             v:vertices ? vertices : [
@@ -172,18 +236,11 @@
         scr.setBgColor('black');
         document.body.style.backgroundColor = 'gray';      
         obj = cube();
-        projmat = matrix();
         let znear = 0.1;
         let zfar = 1000;
         let fov = 90;
         let aspect = scr.height/scr.width;
-        let fovrad = 1/Math.tan((fov/2).toRadians());
-        projmat.m[0][0] = aspect*fovrad;
-        projmat.m[1][1] = fovrad;
-        projmat.m[2][2] = zfar / (zfar-znear);
-        projmat.m[3][2] = (-zfar *znear)/(zfar-znear);
-        projmat.m[2][3] = 1;
-        projmat.m[3][3] = 0;
+        projmat = projectionmatrix(fov,aspect,znear,zfar);
 
     }
 
@@ -284,59 +341,50 @@
         clear(framebuffer);
         // Draw Tris
         let dt = t-start;
-        let mzrot = matrix();
-        let mxrot = matrix();
-        let myrot = matrix();
-        theta += dt/500;
-        //theta = (30).toRadians();
+        
+        
+        theta += dt/10;
+        
+        //theta = (30);
         start = t;
         let halftheta = theta/2;
         let quartertheta = 0;
-        mzrot.m[0][0] = cos(theta);
-        mzrot.m[0][1] = sin(theta);
-        mzrot.m[1][0] = -sin(theta);
-        mzrot.m[1][1] = cos(theta);
-        mzrot.m[2][2] = 1;
-        mzrot.m[3][3] = 1;
+        let worldmatrix = matrix();
+        worldmatrix = matrixmatrixmul(worldmatrix,rotationmatrixz(theta));
+        worldmatrix = matrixmatrixmul(worldmatrix,rotationmatrixx(halftheta));
+        // worldmatrix = matrixmatrixmul(worldmatrix,rotationmatrixy(quartertheta));
+        worldmatrix = matrixmatrixmul(worldmatrix,translationmatrix(0,0,3));
         
-        mxrot.m[0][0] = 1;
-        mxrot.m[1][1] = cos(halftheta);
-        mxrot.m[1][2] = sin(halftheta);
-        mxrot.m[2][1] = -sin(halftheta);
-        mxrot.m[2][2] = cos(halftheta);
-        mxrot.m[3][3] = 1;
 
-        myrot.m[0][0] = cos(quartertheta);
-        myrot.m[0][2] = sin(quartertheta);
-        myrot.m[1][1] = 1
-        myrot.m[2][0] = -sin(quartertheta);
-        myrot.m[2][3] = cos(quartertheta);
-        myrot.m[3][3] = 1;
+        
         
         obj.tris.forEach(function(tri){
-            let trizrot = triangle([
-                matmul(tri.v[0],mzrot),
-                matmul(tri.v[1],mzrot),
-                matmul(tri.v[2],mzrot)
-            ]);
-            let trizxrot = triangle([
-                matmul(trizrot.v[0],mxrot),
-                matmul(trizrot.v[1],mxrot),
-                matmul(trizrot.v[2],mxrot)
-            ]);
+            // let trizrot = triangle([
+            //     matmul(tri.v[0],mzrot),
+            //     matmul(tri.v[1],mzrot),
+            //     matmul(tri.v[2],mzrot)
+            // ]);
+            // let trizxrot = triangle([
+            //     matmul(trizrot.v[0],mxrot),
+            //     matmul(trizrot.v[1],mxrot),
+            //     matmul(trizrot.v[2],mxrot)
+            // ]);
 
-            // let trizxyrot = triangle([
-            //     matmul(trizxrot.v[0],myrot),
-            //     matmul(trizxrot.v[1],myrot),
-            //     matmul(trizxrot.v[2],myrot),
-            // ])
-
+            // // let trizxyrot = triangle([
+            // //     matmul(trizxrot.v[0],myrot),
+            // //     matmul(trizxrot.v[1],myrot),
+            // //     matmul(trizxrot.v[2],myrot),
+            // // ])
+            // let translated = triangle([
+            //     matmul2(trizxrot.v[0],translation),
+            //     matmul2(trizxrot.v[1],translation),
+            //     matmul2(trizxrot.v[2],translation)
+            // ]);
             let translated = triangle([
-                trizxrot.v[0].add(0,0,3),
-                trizxrot.v[1].add(0,0,3),
-                trizxrot.v[2].add(0,0,3),
-            ]);
-
+                matmul(tri.v[0],worldmatrix),
+                matmul(tri.v[1],worldmatrix),
+                matmul(tri.v[2],worldmatrix),
+            ]);            
             
             let line1 = dcl.vector(
                 translated.v[1].x - translated.v[0].x,
@@ -359,6 +407,9 @@
                     matmul(translated.v[1],projmat),
                     matmul(translated.v[2],projmat)]
                 );
+                vproj.v[0] = vproj.v[0].div(vproj.v[0].w);
+                vproj.v[1] = vproj.v[1].div(vproj.v[1].w);
+                vproj.v[2] = vproj.v[2].div(vproj.v[2].w);
                 let scalingvector = dcl.vector(scr.width/2,scr.height/2);
                 let drawtri = triangle(
                     [
