@@ -104,248 +104,101 @@
         let zfar = 1000;
         let fov = 90;
         let aspect = scr.height/scr.width;
-        projmat = projectionmatrix(fov,aspect,znear,zfar);
+        projmat = dcl.matrix.projection(fov,aspect,znear,zfar);
 
     }
-    function filltriangle(tri,col){
-        tri.v.sort(compare);
-        let s,e,dx1,dx2,dx3;
-        let a = tri.v[0].floor();
-        let b = tri.v[1].floor();
-        let c = tri.v[2].floor();
-        s = a;
-        e = a;
-        if(b.y-a.y>0){
-            dx1 = (b.x-a.x)/(b.y-a.y);
-        } else {
-            dx1 = 0;
-        }
-        if(c.y-a.y >0){
-            dx2 = (c.x-a.x)/(c.y-a.y);
-        } else {
-            dx2 = 0;
-        }
-        if(c.y-b.y > 0){
-            dx3 = (c.x-b.x)/(c.y-b.y);
-        } else {
-            dx3 = 0;
-        }
-        if(dx1>dx2){
-            for(;s.y<=b.y;s.y++){
-                e.y++;
-                s.x += dx2;
-                e.x += dx1;
-                bresenline(s.x,e.x,s.y,e.y,col);
-            }
-            e = b;
-            for(;s.y<=c.y;s.y++){
-                e.y++;
-                s.x+=dx2;
-                e.x+=dx3;
-                bresenline(s.x,e.x,s.y,e.y,col);
-            }
-        } else {
-            for(;s.y<=b.y;s.y++){
-                e.y++;
-                s.x+=dx1;
-                e.x+=dx2;
-                bresenline(s.x,e.x,s.y,e.y,col);
-            }
-            s=b;
-            for(;s.y<=c.y;s.y++){
-                e.y++;
-                s.x+=dx3;
-                e.x+=dx2;
-                bresenline(s.x,e.x,s.y,e.y,col);
-            }
-        }
-    }
-
-    function drawlinefast(x1,x2,y,c){
-        x1 = floor(x1);
-        x2 = floor(x2);
-        y = floor(y);
-        if(x1<x2){
-            for(;x1<=x2;x1++){
-                drawpixel(x1,y,c);
-            }
-        } else {
-            for(;x2<=x1;x2++){
-                drawpixel(x1,y,c);
-            }
-        }
-        let d = x2-x1;
-        
-    }
-    // plotLineHigh(x0,y0, x1,y1)
-    // dx = x1 - x0
-    // dy = y1 - y0
-    // xi = 1
-    // if dx < 0
-    //     xi = -1
-    //     dx = -dx
-    // end if
-    // D = 2*dx - dy
-    // x = x0
-
-    // for y from y0 to y1
-    //     plot(x,y)
-    //     if D > 0
-    //     x = x + xi
-    //     D = D - 2*dy
-    //     end if
-    //     D = D + 2*dx
-    //     
-    // plotLineLow(x0,y0, x1,y1)
-    // dx = x1 - x0
-    // dy = y1 - y0
-    // yi = 1
-    // if dy < 0
-    //     yi = -1
-    //     dy = -dy
-    // end if
-    // D = 2*dy - dx
-    // y = y0
-
-    // for x from x0 to x1
-    //     plot(x,y)
-    //     if D > 0
-    //     y = y + yi
-    //     D = D - 2*dx
-    //     end if
-    //     D = D + 2*dy
-
-    // plotLine(x0,y0, x1,y1)
-    // if abs(y1 - y0) < abs(x1 - x0)
-    //     if x0 > x1
-    //     plotLineLow(x1, y1, x0, y0)
-    //     else
-    //     plotLineLow(x0, y0, x1, y1)
-    //     end if
-    // else
-    //     if y0 > y1
-    //     plotLineHigh(x1, y1, x0, y0)
-    //     else
-    //     plotLineHigh(x0, y0, x1, y1)
-    //     end if
-    // end if
-    function bresenline(x1,y1,x2,y2,c){
-        x1 = round(x1);
-        x2 = round(x2);
-        y1 = round(y1);
-        y2 = round(y2);
-        if(x1>x2){
-            let t = x1;
-            x1 = x2;
-            x2 = t;
-        }
-        if(y1>y2){
-            let t = y1;
-            y1 = y2;
-            y2 = t;
-        }
+    
+    function plotlinehigh(x1,y1,x2,y2,c){  
+        x1 = round(x1); x2 = round(x2); y1 = round(y1); y2 = round(y2);
         let dx,dy;
+        let xi = 1;
         dx = x2-x1;
         dy = y2-y1;
-        let d = 2*dy-dx;
-        let y = y1;
-        for(let x=x1;x<=x2;x++){
+        if(dx<0){
+            xi = -1;
+            dx = -dx;
+        }
+        let d = 2*dx-dy;
+        let x = x1;
+        for(let y=y1;y<=y2;y++){
             drawpixel(x,y,c);
             if(d>0){
-                y = y + 1;
-                d = d-2*dx;
+                x = x + xi;
+                d = d-2*dy;
+            }
+            d = d + 2*dx;
+        }
+    }
+
+    function plotlinelow (x1,y1,x2,y2,c){
+        x1 = round(x1); x2 = round(x2); y1 = round(y1); y2 = round(y2);
+        let dx = x2-x1;
+        let dy = y2-y1;
+        let yi = 1;
+        if(dy<0){
+            yi = -1;
+            dy = -dy;
+        }
+        let d = 2*dy-dx;
+        let y = y1;
+        for(let x = x1;x<=x2;x++){
+            drawpixel(x,y,c);
+            if(d>0){
+                y = y + yi;
+                d = d - 2*dx;
             }
             d = d + 2*dy;
         }
     }
 
-    function equals(a,b){
-        return Math.abs(b-a)< 0.1;
-    }
-
-    
-    function drawline(x1,y1,x2,y2,c){
-        c = c ? c : dcl.color(255,255,255,1);
-        if(equals(x1,x2) && equals(y1,y2)){
-            return;
+    function plotline(x1,y1,x2,y2,c){
+        if(abs(y2-y1)<abs(x2-x1)){
+            if(x1>x2){
+                plotlinelow(x2,y2,x1,y1,c);
+            } else {
+                plotlinelow(x1,y1,x2,y2,c);
+            }
+        } else {
+            if(y1>y2){
+                plotlinehigh(x2,y2,x1,y1,c);
+            } else {
+                plotlinehigh(x1,y1,x2,y2,c);
+            }
         }
-
-        let midx = (x2+x1)/2;
-        let midy = (y2+y1)/2;
-
-        drawline(x1,y1,midx,midy,c);
-        drawline(midx+0.001,midy+0.001,x2,y2,c);
-        // dcl.rect(midx,midy,1,1,"white");
-        drawpixel(Math.floor(midx),Math.floor(midy),c);
     }
+
+
     function drawwireframe(tri,c){
-        bresenline(tri.v[0].x,tri.v[0].y,tri.v[1].x,tri.v[1].y,c);
-        bresenline(tri.v[1].x,tri.v[1].y,tri.v[2].x,tri.v[2].y,c);
-        bresenline(tri.v[0].x,tri.v[0].y,tri.v[2].x,tri.v[2].y,c);
+        plotline(tri.v[0].x,tri.v[0].y,tri.v[1].x,tri.v[1].y,c);
+        plotline(tri.v[1].x,tri.v[1].y,tri.v[2].x,tri.v[2].y,c);
+        plotline(tri.v[0].x,tri.v[0].y,tri.v[2].x,tri.v[2].y,c);
     }
-    function copyTri(t){
-        return triangle([
-            dcl.vector(t.p[0].x,t.p[0].y,t.p[0].z),
-            dcl.vector(t.p[1].x,t.p[1].y,t.p[1].z),
-            dcl.vector(t.p[2].x,t.p[2].y,t.p[2].z)
-        ]);
-    }
-    
-    function fequals(a,b,delta){
-        delta = delta || 0.1;
-        return Math.abs(b-a)<delta;
-    }
+
     function drawshaded(tri,col){
-        let dx1, dx2, dx3;
-        let sorted = tri.v.sort(compare);
-        let a = sorted[0].floor();
-        let b = sorted[1].floor();
-        let c = sorted[2].floor();
-        if(b.y-a.y>=0){
-            dx1 = (b.x-a.x)/(b.y-a.y);
-        } else {
-            dx1 = 0;
+        tri.v.sort(compare);
+        let a = tri.v[0].round();
+        let b = tri.v[1].round();
+        let c = tri.v[2].round();
+
+        let islope1 = (b.x-a.x)/(b.y-a.y);
+        let islope2 = (c.x-a.x)/(c.y-a.y);
+
+        let cx1 = a.x;
+        let cx2 = a.x;
+        for(let y = a.y;y<=b.y;y++){
+            plotline(cx1,y,cx2,y,col);
+            cx1 += islope1;
+            cx2 += islope2;
         }
-        if(c.y-a.y>=0){
-            dx2 = (c.x-a.x)/(c.y-a.y);
-        } else {
-            dx2 = 0;
-        }
-        if(c.y-b.y>=0){
-            dx3 = (c.x-b.x)/(c.y-b.y);
-        } else {
-            dx3 = 0;
-        }
-        let s = dcl.vector(a.x,a.y,a.z);
-        let e = dcl.vector(a.x,a.y,a.z);
-        if(dx1>=dx2){
-            for(;s.y<=b.y;s.y++){
-                drawlinei(s.x,s.y,e.x,e.y,col);
-                e.y++;
-                s.x+=dx2;
-                e.x+= dx1;
-            }
-            e = dcl.vector(b.x,b.y,b.z);
-            for(;s.y<=c.y;s.y++){
-                drawlinei(s.x,s.y,e.x,e.y,col);
-                e.y++;
-                s.x += dx2;
-                e.x += dx3;
-            }
-        } else {
-            for(;s.y<= b.y;s.y++){
-                drawlinei(s.x,s.y,e.x,e.y,col);
-                e.y++;
-                s.x += dx1;
-                e.x += dx2;
-            }
-            s = dcl.vector(b.x, b.y, b.z);
-            for(;s.y<=c.y;s.y++){
-                drawlinei(s.x,s.y, e.x,e.y,col);
-                e.y++;
-                s.x += dx3;
-                e.x+= dx2;
-            }
+
+        islope1 = (c.x-a.x)/(c.y-a.y);
+        islope2 = (c.x-b.x)/(c.y-b.y);
+        cx1 = c.x;
+        cx2 = c.x;
+        for(let y = c.y;y>=b.y;y--){
+            plotline(cx1,y,cx2,y,col);
+            cx1 -= islope1;
+            cx2 -= islope2;
         }
     }
     function getColor(l){
@@ -418,15 +271,15 @@
         let dt = t-start;
         theta += dt/10;
         
-        //theta = (60);
+        //theta = (10);
         start = t;
         let halftheta = theta/2;
         let quartertheta = theta/4;
         let worldmatrix = dcl.matrix();
-        worldmatrix = worldmatrix.mul(dcl.matrix.rotation.z(theta));
-        worldmatrix = worldmatrix.mul(dcl.matrix.rotation.x(halftheta));
-        //worldmatrix = worldmatrix.mul(dcl.matrix.rotation.y(halftheta));
-        worldmatrix = worldmatrix.mul(dcl.matrix.translation(0,0,3));
+        worldmatrix = worldmatrix.mul(dcl.matrix.rotation.z(sin(theta/20)*15));
+        worldmatrix = worldmatrix.mul(dcl.matrix.rotation.x(180));
+        worldmatrix = worldmatrix.mul(dcl.matrix.rotation.y(-theta));
+        worldmatrix = worldmatrix.mul(dcl.matrix.translation(0,0,8));
         let rasterizetris = [];
         let cols = [];
         obj.tris.forEach(function(tri){
@@ -470,10 +323,11 @@
         rasterizetris.sort(zcompare);
         for(let i =0;i<rasterizetris.length;i++){
             let drawtri = rasterizetris[i];
-            //filltriangle(drawtri, drawtri.col);
+            drawshaded(drawtri, drawtri.col);
             drawwireframe(drawtri,drawtri.col);
         }
-        scr.ctx.putImageData(framebuffer,0,0);        
+        scr.ctx.putImageData(framebuffer,0,0);  
+        //dcl.text(theta.toFixed(2),20,20,"white","Arial",12);      
         requestAnimationFrame(draw);
         
     }
@@ -514,7 +368,7 @@
         });
         rq.send();
     }
-    loadobj("gizmo.obj", function (mesh) {
+    loadobj("teapot.obj", function (mesh) {
         obj = mesh;
         setup();
         draw(0);
