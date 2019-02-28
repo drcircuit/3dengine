@@ -9,6 +9,6 @@
   "author": "The Working Class Hacker &lt;workingclasshacker@gmail.com&gt;",
   "license": "MIT",
   "dependencies": {
-    "drcircuitscanvaslibrary": "^1.2.1"
+    "drcircuitscanvaslibrary": "^1.2.8"
   }
 }
